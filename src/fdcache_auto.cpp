@@ -125,9 +125,20 @@ FdEntity* AutoFdEntity::GetExistFdEntity(const char* path, int existfd)
 
 FdEntity* AutoFdEntity::OpenExistFdEntity(const char* path, int flags)
 {
+    //printf("\n\n\n Michael Tocco - OpenExistFdEntity \n\n\n");
+    // called on every operation
+
     Close();
 
     if(NULL == (pFdEntity = FdManager::get()->OpenExistFdEntity(path, pseudo_fd, flags))){
+        
+        //printf("\n\n\n Michael Tocco - OpenExistFdEntity - inside if block \n\n\n");
+        // called on every operation
+        // it means that this is returning null
+        // NOT RUN ON UPLOAD
+
+        // IF THERE IS AN UPLOAD, THEN FUNCTION WILL RETURN NON NULL TYPE
+
         return NULL;
     }
     return pFdEntity;

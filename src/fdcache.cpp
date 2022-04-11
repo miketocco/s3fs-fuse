@@ -535,6 +535,11 @@ FdEntity* FdManager::GetFdEntity(const char* path, int& existfd, bool newfd, boo
 
 FdEntity* FdManager::Open(int& fd, const char* path, headers_t* pmeta, off_t size, time_t time, int flags, bool force_tmpfile, bool is_create, bool ignore_modify, AutoLock::Type type)
 {
+
+    //printf("\n\n\n Michael Tocco - Open() \n\n\n");
+    // called on all operations
+
+
     S3FS_PRN_DBG("[path=%s][size=%lld][time=%lld][flags=0x%x][force_tmpfile=%s][create=%s][ignore_modify=%s]", SAFESTRPTR(path), static_cast<long long>(size), static_cast<long long>(time), flags, (force_tmpfile ? "yes" : "no"), (is_create ? "yes" : "no"), (ignore_modify ? "yes" : "no"));
 
     if(!path || '\0' == path[0]){
@@ -643,11 +648,21 @@ FdEntity* FdManager::GetExistFdEntity(const char* path, int existfd)
 
 FdEntity* FdManager::OpenExistFdEntity(const char* path, int& fd, int flags)
 {
+
+    //printf("\n\n\n Michael Tocco - OpenExistFdEntity of FdManager \n\n\n");
+    // called on every operation (including uplaod)
+    
+
     S3FS_PRN_DBG("[path=%s][flags=0x%x]", SAFESTRPTR(path), flags);
 
     // search entity by path, and create pseudo fd
     FdEntity* ent = Open(fd, path, NULL, -1, -1, flags, false, false, false, AutoLock::NONE);
     if(!ent){
+
+        //printf("\n\n\n Michael Tocco - OpenExistFdEntity of FdManager - if block for condition !ent \n\n\n");
+        // called on every operation except upload
+
+
         // Not found entity
         return NULL;
     }

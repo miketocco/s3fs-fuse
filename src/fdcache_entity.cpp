@@ -1776,6 +1776,9 @@ ssize_t FdEntity::Read(int fd, char* bytes, off_t start, size_t size, bool force
 
 ssize_t FdEntity::Write(int fd, const char* bytes, off_t start, size_t size)
 {
+    //printf("\n\n\n Michael Tocco - Write() \n\n\n");
+
+
     S3FS_PRN_DBG("[path=%s][pseudo_fd=%d][physical_fd=%d][offset=%lld][size=%zu]", path.c_str(), fd, physical_fd, static_cast<long long int>(start), size);
 
     PseudoFdInfo* pseudo_obj = NULL;
@@ -1803,13 +1806,38 @@ ssize_t FdEntity::Write(int fd, const char* bytes, off_t start, size_t size)
     }
 
     ssize_t wsize;
+
     if(nomultipart){
+        
+        printf("\n\n\n Michael Tocco - Write() - if block no multipart \n\n\n");
+
         // No multipart upload
         wsize = WriteNoMultipart(pseudo_obj, bytes, start, size);
+
     }else if(FdEntity::mixmultipart){
+        
+        //printf("\n\n\n Michael Tocco - Write() - if block Mix multipart \n\n\n");
+
+
+
+
+
+        /* vvvvvvvvvvvvvvvvvvvvvvvv CALLED ON UPLOAD ONLY vvvvvvvvvvvvvvvvvvvvvvvv */
+
         // Mix multipart upload
         wsize = WriteMixMultipart(pseudo_obj, bytes, start, size);
+
+        /* ^^^^^^^^^^^^^^^^^^^^^^^^ CALLED ON UPLOAD ONLY ^^^^^^^^^^^^^^^^^^^^^^^^ */
+
+
+
+
+
+
     }else{
+
+        printf("\n\n\n Michael Tocco - Write() - if block Normal multipart \n\n\n");
+
         // Normal multipart upload
         wsize = WriteMultipart(pseudo_obj, bytes, start, size);
     }
@@ -2018,8 +2046,28 @@ ssize_t FdEntity::WriteMixMultipart(PseudoFdInfo* pseudo_obj, const char* bytes,
         // already start multipart uploading
     }
 
+
+    // MICHAEL TOCCO - ATTEMPTING TO CHANGE THE CONTENTS OF FILE
+
+    int size_of_bytes;
+
+    size_of_bytes = sizeof(bytes);
+
+    printf("\n\n\n MICHAEL TOCCO - BYTES: %d \n\n\n", size_of_bytes);
+
+    printf("\n\n\n data in bytes char pointer: ");
+    
+    for (int i = 0; i < size_of_bytes; i++){
+        printf("%c", bytes[i]);
+    }
+
+    printf("\n\n\n");
+
+    // MICHAEL TOCCO - END OF ATTEMPTS
+
     // Writing
     ssize_t wsize;
+
     if(-1 == (wsize = pwrite(physical_fd, bytes, size, start))){
         S3FS_PRN_ERR("pwrite failed. errno(%d)", errno);
         return -errno;

@@ -772,9 +772,20 @@ static int s3fs_getattr(const char* _path, struct stat* stbuf)
     // If has already opened fd, the st_size should be instead.
     // (See: Issue 241)
     if(stbuf){
+        
+        // CALLED ON ANY OPERATION: printf("\n\n\n Michael Tocco \n\n\n");
+
         AutoFdEntity autoent;
-        FdEntity*    ent;
+        FdEntity*    ent; // ent contains something important
         if(NULL != (ent = autoent.OpenExistFdEntity(path))){
+                    
+            //printf("\n\n\n Michael Tocco \n\n\n");
+            // CALLED ON UPLOAD ONLY (cp, called twice on touch, not called on cat)
+
+            /*
+                this code is only called when ent is not null
+            */
+        
             struct stat tmpstbuf;
             if(ent->GetStats(tmpstbuf)){
                 stbuf->st_size = tmpstbuf.st_size;
@@ -2361,6 +2372,10 @@ static int s3fs_write(const char* _path, const char* buf, size_t size, off_t off
         S3FS_PRN_ERR("could not find opened pseudo_fd(%llu) for path(%s)", (unsigned long long)(fi->fh), path);
         return -EIO;
     }
+
+    //printf("\n\n\n Michael Tocco - s3fs_write \n\n\n");
+    // CALLED ON UPLOAD ONLY
+
 
     if(0 > (res = ent->Write(static_cast<int>(fi->fh), buf, offset, size))){
         S3FS_PRN_WARN("failed to write file(%s). result=%zd", path, res);
