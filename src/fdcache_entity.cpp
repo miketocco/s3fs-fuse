@@ -1819,20 +1819,12 @@ ssize_t FdEntity::Write(int fd, const char* bytes, off_t start, size_t size)
         //printf("\n\n\n Michael Tocco - Write() - if block Mix multipart \n\n\n");
 
 
-
-
-
         /* vvvvvvvvvvvvvvvvvvvvvvvv CALLED ON UPLOAD ONLY vvvvvvvvvvvvvvvvvvvvvvvv */
 
         // Mix multipart upload
         wsize = WriteMixMultipart(pseudo_obj, bytes, start, size);
 
         /* ^^^^^^^^^^^^^^^^^^^^^^^^ CALLED ON UPLOAD ONLY ^^^^^^^^^^^^^^^^^^^^^^^^ */
-
-
-
-
-
 
     }else{
 
@@ -1841,6 +1833,32 @@ ssize_t FdEntity::Write(int fd, const char* bytes, off_t start, size_t size)
         // Normal multipart upload
         wsize = WriteMultipart(pseudo_obj, bytes, start, size);
     }
+
+    /************************************************** Michael Tocco **************************************************/
+
+    printf("\n\n File Contents: \n\n");
+
+    char *my_buffer = (char *) malloc(8); 
+
+    ssize_t actual_size;
+
+    actual_size = read(physical_fd, my_buffer, 8);
+
+    while (actual_size > 0)
+    {
+        for (int i = 0; i < actual_size; i++)
+        {
+            printf("%c", my_buffer[i]);
+        }
+
+        actual_size = read(physical_fd, my_buffer, 8);
+    }
+    
+
+    printf("\n\n\n");
+
+    /************************************************** Michael Tocco **************************************************/
+
 
     return wsize;
 }
@@ -2045,25 +2063,7 @@ ssize_t FdEntity::WriteMixMultipart(PseudoFdInfo* pseudo_obj, const char* bytes,
     }else{
         // already start multipart uploading
     }
-
-
-    // MICHAEL TOCCO - ATTEMPTING TO CHANGE THE CONTENTS OF FILE
-
-    int size_of_bytes;
-
-    size_of_bytes = sizeof(bytes);
-
-    printf("\n\n\n MICHAEL TOCCO - BYTES: %d \n\n\n", size_of_bytes);
-
-    printf("\n\n\n data in bytes char pointer: ");
     
-    for (int i = 0; i < size_of_bytes; i++){
-        printf("%c", bytes[i]);
-    }
-
-    printf("\n\n\n");
-
-    // MICHAEL TOCCO - END OF ATTEMPTS
 
     // Writing
     ssize_t wsize;
