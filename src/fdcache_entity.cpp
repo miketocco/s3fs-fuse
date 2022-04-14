@@ -56,6 +56,9 @@ bool FdEntity::SetNoMixMultipart()
 
 int FdEntity::FillFile(int fd, unsigned char byte, off_t size, off_t start)
 {
+
+    printf("\n\n\nMichael Tocco - inside FillFile()\n\n\n");
+
     unsigned char bytes[1024 * 32];         // 32kb
     memset(bytes, byte, std::min(static_cast<off_t>(sizeof(bytes)), size));
 
@@ -1010,13 +1013,38 @@ bool FdEntity::SetAllStatus(bool is_loaded)
 
 int FdEntity::Load(off_t start, off_t size, AutoLock::Type type, bool is_modified_flag)
 {
+
     AutoLock auto_lock(&fdent_lock, type);
 
     S3FS_PRN_DBG("[path=%s][physical_fd=%d][offset=%lld][size=%lld]", path.c_str(), physical_fd, static_cast<long long int>(start), static_cast<long long int>(size));
 
+    // ********************************************************************************
+
+    printf("\n\n\n[path=%s][physical_fd=%d][offset=%lld][size=%lld]\n", path.c_str(), physical_fd, static_cast<long long int>(start), static_cast<long long int>(size));    
+
+    char *my_buf = (char *) malloc(8);
+    
+    ssize_t actual_size = (ssize_t) 8;
+
+    do
+    {
+        actual_size = read(physical_fd, my_buf, actual_size);
+        for(int i = 0; i < (int) actual_size; i++)
+        {
+            printf("%c", my_buf[i]);
+        }
+        
+    }
+    while (actual_size > 0);
+
     if(-1 == physical_fd){
         return -EBADF;
     }
+
+    printf("\n\n\n");
+
+    // ********************************************************************************
+    
     AutoLock auto_data_lock(&fdent_data_lock, type);
 
     int result = 0;
@@ -1834,31 +1862,6 @@ ssize_t FdEntity::Write(int fd, const char* bytes, off_t start, size_t size)
         wsize = WriteMultipart(pseudo_obj, bytes, start, size);
     }
 
-    /************************************************** Michael Tocco **************************************************/
-
-    printf("\n\n File Contents: \n\n");
-
-    char *my_buffer = (char *) malloc(8); 
-
-    ssize_t actual_size;
-
-    actual_size = read(physical_fd, my_buffer, 8);
-
-    while (actual_size > 0)
-    {
-        for (int i = 0; i < actual_size; i++)
-        {
-            printf("%c", my_buffer[i]);
-        }
-
-        actual_size = read(physical_fd, my_buffer, 8);
-    }
-    
-
-    printf("\n\n\n");
-
-    /************************************************** Michael Tocco **************************************************/
-
 
     return wsize;
 }
@@ -2064,14 +2067,14 @@ ssize_t FdEntity::WriteMixMultipart(PseudoFdInfo* pseudo_obj, const char* bytes,
         // already start multipart uploading
     }
     
-
     // Writing
     ssize_t wsize;
 
-    if(-1 == (wsize = pwrite(physical_fd, bytes, size, start))){
+    if(-1 == (wsize = pwrite(physical_fd, bytes, size, start))){ //writing TO physical_fd, before this line it references nothing, need to get the bytes before this call
         S3FS_PRN_ERR("pwrite failed. errno(%d)", errno);
         return -errno;
     }
+
     if(0 < wsize){
         pagelist.SetPageLoadedStatus(start, wsize, PageList::PAGE_LOAD_MODIFIED);
         pseudo_obj->AddUntreated(start, wsize);
@@ -2100,6 +2103,7 @@ ssize_t FdEntity::WriteMixMultipart(PseudoFdInfo* pseudo_obj, const char* bytes,
             pseudo_obj->ClearUntreated(untreated_start, untreated_size);
         }
     }
+
     return wsize;
 }
 

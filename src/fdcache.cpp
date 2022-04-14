@@ -633,15 +633,20 @@ FdEntity* FdManager::GetExistFdEntity(const char* path, int existfd)
 {
     S3FS_PRN_DBG("[path=%s][pseudo_fd=%d]", SAFESTRPTR(path), existfd);
 
+    // can't access existfd here
+
     AutoLock auto_lock(&FdManager::fd_manager_lock);
 
     // search from all entity.
     for(fdent_map_t::iterator iter = fent.begin(); iter != fent.end(); ++iter){
         if(iter->second && iter->second->FindPseudoFd(existfd)){
+            // cant access existfd here 
+
             // found existfd in entity
             return iter->second;
         }
     }
+
     // not found entity
     return NULL;
 }
