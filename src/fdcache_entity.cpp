@@ -1020,7 +1020,7 @@ int FdEntity::Load(off_t start, off_t size, AutoLock::Type type, bool is_modifie
 
     // ********************************************************************************
 
-    printf("\n\n\n[path=%s][physical_fd=%d][offset=%lld][size=%lld]\n", path.c_str(), physical_fd, static_cast<long long int>(start), static_cast<long long int>(size));    
+    printf("\n\n\nInside Load()[path=%s][physical_fd=%d][offset=%lld][size=%lld]\n", path.c_str(), physical_fd, static_cast<long long int>(start), static_cast<long long int>(size));    
 
     char *my_buf = (char *) malloc(8);
     
@@ -1370,9 +1370,37 @@ off_t FdEntity::BytesModified()
 // Files smaller than the minimum part size will not be multipart uploaded,
 // but will be uploaded as single part(normally).
 //
-int FdEntity::RowFlush(int fd, const char* tpath, bool force_sync)
+int FdEntity::RowFlush(int fd, const char* tpath, bool force_sync) // this is called before Load()
 {
+
     S3FS_PRN_INFO3("[tpath=%s][path=%s][pseudo_fd=%d][physical_fd=%d]", SAFESTRPTR(tpath), path.c_str(), fd, physical_fd);
+
+    // ******************************************************************************** 
+
+    printf("\n\n\nInside RowFlush: [tpath=%s][path=%s][pseudo_fd=%d][physical_fd=%d]\n\n\n", SAFESTRPTR(tpath), path.c_str(), fd, physical_fd);
+
+    char *my_buf = (char *) malloc(8);
+    
+    ssize_t actual_size = (ssize_t) 8;
+
+    do
+    {
+        actual_size = read(physical_fd, my_buf, actual_size);
+        for(int i = 0; i < (int) actual_size; i++)
+        {
+            printf("%c", my_buf[i]);
+        }
+        
+    }
+    while (actual_size > 0);
+
+    if(-1 == physical_fd){
+        return -EBADF;
+    }
+
+    printf("\n\n\n");
+
+    // ********************************************************************************
 
     if(-1 == physical_fd){
         return -EBADF;
