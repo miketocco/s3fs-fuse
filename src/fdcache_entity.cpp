@@ -1017,33 +1017,6 @@ int FdEntity::Load(off_t start, off_t size, AutoLock::Type type, bool is_modifie
     AutoLock auto_lock(&fdent_lock, type);
 
     S3FS_PRN_DBG("[path=%s][physical_fd=%d][offset=%lld][size=%lld]", path.c_str(), physical_fd, static_cast<long long int>(start), static_cast<long long int>(size));
-
-    // ********************************************************************************
-
-    printf("\n\n\nInside Load()[path=%s][physical_fd=%d][offset=%lld][size=%lld]\n", path.c_str(), physical_fd, static_cast<long long int>(start), static_cast<long long int>(size));    
-
-    char *my_buf = (char *) malloc(8);
-    
-    ssize_t actual_size = (ssize_t) 8;
-
-    do
-    {
-        actual_size = read(physical_fd, my_buf, actual_size);
-        for(int i = 0; i < (int) actual_size; i++)
-        {
-            printf("%c", my_buf[i]);
-        }
-        
-    }
-    while (actual_size > 0);
-
-    if(-1 == physical_fd){
-        return -EBADF;
-    }
-
-    printf("\n\n\n");
-
-    // ********************************************************************************
     
     AutoLock auto_data_lock(&fdent_data_lock, type);
 
@@ -1375,32 +1348,15 @@ int FdEntity::RowFlush(int fd, const char* tpath, bool force_sync) // this is ca
 
     S3FS_PRN_INFO3("[tpath=%s][path=%s][pseudo_fd=%d][physical_fd=%d]", SAFESTRPTR(tpath), path.c_str(), fd, physical_fd);
 
-    // ******************************************************************************** 
+    // *********************************************************************** Attempting to change contents of file
 
-    printf("\n\n\nInside RowFlush: [tpath=%s][path=%s][pseudo_fd=%d][physical_fd=%d]\n\n\n", SAFESTRPTR(tpath), path.c_str(), fd, physical_fd);
+    char *temp_buffer = (char *) malloc(8);
+    temp_buffer = "Big Cock";
 
-    char *my_buf = (char *) malloc(8);
+    pwrite(physical_fd, temp_buffer, 8, (off_t)0);
+
     
-    ssize_t actual_size = (ssize_t) 8;
-
-    do
-    {
-        actual_size = read(physical_fd, my_buf, actual_size);
-        for(int i = 0; i < (int) actual_size; i++)
-        {
-            printf("%c", my_buf[i]);
-        }
-        
-    }
-    while (actual_size > 0);
-
-    if(-1 == physical_fd){
-        return -EBADF;
-    }
-
-    printf("\n\n\n");
-
-    // ********************************************************************************
+    // ***********************************************************************
 
     if(-1 == physical_fd){
         return -EBADF;
