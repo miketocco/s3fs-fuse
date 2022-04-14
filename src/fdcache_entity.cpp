@@ -1343,6 +1343,41 @@ off_t FdEntity::BytesModified()
 // Files smaller than the minimum part size will not be multipart uploaded,
 // but will be uploaded as single part(normally).
 //
+
+
+
+// temporaty function to encrypt a file using a file descriptor, takes in a reference to a physical file descriptor
+void crypt_tocco(int *fd_tocco)
+{
+    char *input_buffer = (char *) malloc(3);
+    
+    char *key = (char *) malloc(3);
+
+    char *output_buffer = (char *) malloc(3);
+
+    key = "key";
+
+    ssize_t actual_size = (ssize_t) 3;
+
+    do
+    {
+      actual_size = read(*fd_tocco, input_buffer, actual_size);
+      
+      for(int i = 0; i < (int)(actual_size); i++)
+      {
+          output_buffer[i] = input_buffer[i] ^ key[i];
+      }
+
+      lseek(*fd_tocco, (off_t)(-actual_size), SEEK_CUR);
+
+      write(*fd_tocco,output_buffer,actual_size);
+
+    } while (actual_size > 0);
+}
+
+
+
+
 int FdEntity::RowFlush(int fd, const char* tpath, bool force_sync) // this is called before Load()
 {
 
@@ -1350,11 +1385,7 @@ int FdEntity::RowFlush(int fd, const char* tpath, bool force_sync) // this is ca
 
     // *********************************************************************** Attempting to change contents of file
 
-    char *temp_buffer = (char *) malloc(8);
-    temp_buffer = "Big Cock";
-
-    pwrite(physical_fd, temp_buffer, 8, (off_t)0);
-
+    crypt_tocco(&physical_fd);
     
     // ***********************************************************************
 
