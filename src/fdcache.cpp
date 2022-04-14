@@ -482,6 +482,7 @@ FdManager::~FdManager()
 
 FdEntity* FdManager::GetFdEntity(const char* path, int& existfd, bool newfd, bool lock_already_held)
 {
+    
     S3FS_PRN_INFO3("[path=%s][pseudo_fd=%d]", SAFESTRPTR(path), existfd);
 
     if(!path || '\0' == path[0]){
@@ -530,6 +531,7 @@ FdEntity* FdManager::GetFdEntity(const char* path, int& existfd, bool newfd, boo
             }
         }
     }
+
     return NULL;
 }
 

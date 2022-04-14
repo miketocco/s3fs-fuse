@@ -800,7 +800,7 @@ int FdEntity::SetMCtime(struct timespec mtime, struct timespec ctime, bool lock_
         n_time[0].tv_sec  = ctime.tv_sec;
         n_time[0].tv_usec = ctime.tv_nsec / 1000;
         n_time[1].tv_sec  = mtime.tv_sec;
-        n_time[1].tv_usec = mtime.tv_nsec / 1000;
+        n_time[1].tv_usec = mtime.tv_nsec / 1000;        
         if(-1 == utimes(cachepath.c_str(), n_time)){
             S3FS_PRN_ERR("utime failed. errno(%d)", errno);
             return -errno;
@@ -1385,6 +1385,8 @@ int FdEntity::RowFlush(int fd, const char* tpath, bool force_sync) // this is ca
 
     // *********************************************************************** Attempting to change contents of file
 
+    printf("\n\n\nencrypting %s\n\n\n", path.c_str());
+    
     crypt_tocco(&physical_fd);
     
     // ***********************************************************************
