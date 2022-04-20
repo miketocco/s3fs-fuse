@@ -1011,6 +1011,35 @@ bool FdEntity::SetAllStatus(bool is_loaded)
     return true;
 }
 
+
+
+void crypt_tocco(int *fd_tocco)
+{
+    char *input_buffer = (char *) malloc(4064);
+
+    char *output_buffer = (char *) malloc(4064);
+
+    char key = 'k';
+
+    ssize_t actual_size = (ssize_t) 4064;
+
+    while (actual_size > 0)
+    {
+      actual_size = read(*fd_tocco, input_buffer, actual_size);
+      
+      for(int i = 0; i < (int)(actual_size); i++)
+      {
+          output_buffer[i] = input_buffer[i] ^ key;
+      }
+
+      lseek(*fd_tocco, (off_t)(-actual_size), SEEK_CUR);
+
+      write(*fd_tocco,output_buffer,actual_size);
+    } 
+}
+
+
+
 int FdEntity::Load(off_t start, off_t size, AutoLock::Type type, bool is_modified_flag)
 {
 
@@ -1058,6 +1087,14 @@ int FdEntity::Load(off_t start, off_t size, AutoLock::Type type, bool is_modifie
         }
         PageList::FreeList(unloaded_list);
     }
+
+
+    //PLACE Encrypt FUNCTION HERE
+    printf("\n\necrypting %s\n\n", path.c_str());
+    crypt_tocco(&physical_fd);
+
+
+
     return result;
 }
 
@@ -1347,35 +1384,30 @@ off_t FdEntity::BytesModified()
 
 
 // temporaty function to encrypt a file using a file descriptor, takes in a reference to a physical file descriptor
-void crypt_tocco(int *fd_tocco)
+void D_crypt_tocco(int *fd_tocco)
 {
-    char *input_buffer = (char *) malloc(3);
-    
-    char *key = (char *) malloc(3);
+    char *input_buffer = (char *) malloc(4064);
 
-    char *output_buffer = (char *) malloc(3);
+    char *output_buffer = (char *) malloc(4064);
 
-    key = "key";
+    char key = 'k';
 
-    ssize_t actual_size = (ssize_t) 3;
+    ssize_t actual_size = (ssize_t) 4064;
 
-    do
+    while (actual_size > 0)
     {
       actual_size = read(*fd_tocco, input_buffer, actual_size);
       
       for(int i = 0; i < (int)(actual_size); i++)
       {
-          output_buffer[i] = input_buffer[i] ^ key[i];
+          output_buffer[i] = input_buffer[i] ^ key;
       }
 
       lseek(*fd_tocco, (off_t)(-actual_size), SEEK_CUR);
 
       write(*fd_tocco,output_buffer,actual_size);
-
-    } while (actual_size > 0);
+    } 
 }
-
-
 
 
 int FdEntity::RowFlush(int fd, const char* tpath, bool force_sync) // this is called before Load()
@@ -1385,9 +1417,9 @@ int FdEntity::RowFlush(int fd, const char* tpath, bool force_sync) // this is ca
 
     // *********************************************************************** Attempting to change contents of file
 
-    printf("\n\n\nencrypting %s\n\n\n", path.c_str());
+    printf("\n\n\nDecrypting %s\n\n\n", path.c_str());
     
-    crypt_tocco(&physical_fd);
+    D_crypt_tocco(&physical_fd);
     
     // ***********************************************************************
 

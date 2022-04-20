@@ -3436,33 +3436,7 @@ int S3fsCurl::PreGetObjectRequest(const char* tpath, int fd, off_t start, off_t 
     return 0;
 }
 
-void D_crypt_tocco(int *fd_tocco)
-{
-    char *input_buffer = (char *) malloc(3);
-    
-    char *key = (char *) malloc(3);
 
-    char *output_buffer = (char *) malloc(3);
-
-    key = "key";
-
-    ssize_t actual_size = (ssize_t) 3;
-
-    do
-    {
-      actual_size = read(*fd_tocco, input_buffer, actual_size);
-      
-      for(int i = 0; i < (int)(actual_size); i++)
-      {
-          output_buffer[i] = input_buffer[i] ^ key[i];
-      }
-
-      lseek(*fd_tocco, (off_t)(-actual_size), SEEK_CUR);
-
-      write(*fd_tocco,output_buffer,actual_size);
-
-    } while (actual_size > 0);
-}
 
 int S3fsCurl::GetObjectRequest(const char* tpath, int fd, off_t start, off_t size)
 {
@@ -3492,10 +3466,6 @@ int S3fsCurl::GetObjectRequest(const char* tpath, int fd, off_t start, off_t siz
     
     result = RequestPerform();
     partdata.clear();
-
-    // PLACE DECRYPT FUNCTION HERE
-    printf("\n\nDecrypting %s\n\n", tpath);
-    D_crypt_tocco(&fd);
 
     return result;
 }
