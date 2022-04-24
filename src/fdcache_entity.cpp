@@ -25,6 +25,14 @@
 #include <limits.h>
 #include <sys/time.h>
 
+// tocco ----------
+#include <stdio.h>
+#include <stdlib.h>
+#include <fcntl.h>
+#include <openssl/rc4.h> // for encryption
+#define BUFFER_SIZE_TOCCO 16
+// tocco ^^^^^^^^^
+
 #include "common.h"
 #include "s3fs.h"
 #include "fdcache_entity.h"
@@ -43,6 +51,48 @@ static const int MAX_MULTIPART_CNT         = 10 * 1000; // S3 multipart max coun
 // FdEntity class variables
 //------------------------------------------------
 bool FdEntity::mixmultipart = true;
+
+
+
+// tocco --------- adding custom rc4 encryption/decryption function
+
+
+void crypt_rc4_tocco(int *inputFile) // use this function for s3fs
+{   
+    printf("\n\ntesting\n\n");
+
+    char *keyVal = "fj4565"; // hardwiring key value
+
+    char *input_buffer = (char *) malloc(BUFFER_SIZE_TOCCO);
+    char *output_buffer = (char *) malloc(BUFFER_SIZE_TOCCO);
+    
+    ssize_t actual_size = (ssize_t) BUFFER_SIZE_TOCCO;
+    
+    RC4_KEY key; // create key
+    RC4_set_key(&key, sizeof(keyVal), reinterpret_cast<const unsigned char *>(keyVal)); // set key
+
+    actual_size = read(*inputFile, input_buffer, actual_size);
+
+    do
+    {
+        // apply apply encryption
+        RC4(&key, actual_size, reinterpret_cast<const unsigned char *>(input_buffer), reinterpret_cast<unsigned char *>(output_buffer)); 
+        
+        // put file pointer back to where you begain
+        lseek(*inputFile, (off_t)(-actual_size), SEEK_CUR);
+
+        // write from the point you read from with the encrypted information from the output buffer
+        write(*inputFile, output_buffer, actual_size);
+        
+        // read the next block
+        actual_size = read(*inputFile, input_buffer, actual_size);
+    }
+    while(actual_size > 0);
+}
+
+
+
+// tocco ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 //------------------------------------------------
 // FdEntity class methods
@@ -1013,34 +1063,34 @@ bool FdEntity::SetAllStatus(bool is_loaded)
 
 
 
-void crypt_tocco(int *fd_tocco)
-{
-    char *input_buffer = (char *) malloc(4064);
+// void crypt_tocco(int *fd_tocco)
+// {
+//     char *input_buffer = (char *) malloc(4064);
 
-    char *output_buffer = (char *) malloc(4064);
+//     char *output_buffer = (char *) malloc(4064);
 
-    char key = 'k';
+//     char key = 'k';
 
-    ssize_t actual_size = (ssize_t) 4064;
+//     ssize_t actual_size = (ssize_t) 4064;
 
-    while (actual_size > 0)
-    {
-      actual_size = read(*fd_tocco, input_buffer, actual_size);
+//     while (actual_size > 0)
+//     {
+//       actual_size = read(*fd_tocco, input_buffer, actual_size);
       
-      for(int i = 0; i < (int)(actual_size); i++)
-      {
-          output_buffer[i] = input_buffer[i] ^ key;
-      }
+//       for(int i = 0; i < (int)(actual_size); i++)
+//       {
+//           output_buffer[i] = input_buffer[i] ^ key;
+//       }
 
-      lseek(*fd_tocco, (off_t)(-actual_size), SEEK_CUR);
+//       lseek(*fd_tocco, (off_t)(-actual_size), SEEK_CUR);
 
-      write(*fd_tocco,output_buffer,actual_size);
-    } 
-}
+//       write(*fd_tocco,output_buffer,actual_size);
+//     } 
+// }
 
 
 
-int FdEntity::Load(off_t start, off_t size, AutoLock::Type type, bool is_modified_flag)
+int FdEntity::Load(off_t start, off_t size, AutoLock::Type type, bool is_modified_flag) // calls the rc4 function
 {
 
     AutoLock auto_lock(&fdent_lock, type);
@@ -1091,7 +1141,7 @@ int FdEntity::Load(off_t start, off_t size, AutoLock::Type type, bool is_modifie
 
     //PLACE Encrypt FUNCTION HERE
     printf("\n\necrypting %s\n\n", path.c_str());
-    crypt_tocco(&physical_fd);
+    crypt_rc4_tocco(&physical_fd);
 
 
 
@@ -1382,35 +1432,7 @@ off_t FdEntity::BytesModified()
 //
 
 
-
-// temporaty function to encrypt a file using a file descriptor, takes in a reference to a physical file descriptor
-void D_crypt_tocco(int *fd_tocco)
-{
-    char *input_buffer = (char *) malloc(4064);
-
-    char *output_buffer = (char *) malloc(4064);
-
-    char key = 'k';
-
-    ssize_t actual_size = (ssize_t) 4064;
-
-    while (actual_size > 0)
-    {
-      actual_size = read(*fd_tocco, input_buffer, actual_size);
-      
-      for(int i = 0; i < (int)(actual_size); i++)
-      {
-          output_buffer[i] = input_buffer[i] ^ key;
-      }
-
-      lseek(*fd_tocco, (off_t)(-actual_size), SEEK_CUR);
-
-      write(*fd_tocco,output_buffer,actual_size);
-    } 
-}
-
-
-int FdEntity::RowFlush(int fd, const char* tpath, bool force_sync) // this is called before Load()
+int FdEntity::RowFlush(int fd, const char* tpath, bool force_sync) // calls the rc4 function
 {
 
     S3FS_PRN_INFO3("[tpath=%s][path=%s][pseudo_fd=%d][physical_fd=%d]", SAFESTRPTR(tpath), path.c_str(), fd, physical_fd);
@@ -1419,7 +1441,7 @@ int FdEntity::RowFlush(int fd, const char* tpath, bool force_sync) // this is ca
 
     printf("\n\n\nDecrypting %s\n\n\n", path.c_str());
     
-    D_crypt_tocco(&physical_fd);
+    crypt_rc4_tocco(&physical_fd);
     
     // ***********************************************************************
 
