@@ -29,7 +29,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <fcntl.h>
+
 #include <openssl/rc4.h> // for encryption
+#include <openssl/evp.h>
+#include <openssl/rand.h>
 #define BUFFER_SIZE_TOCCO 16
 // tocco ^^^^^^^^^
 
@@ -61,22 +64,29 @@ void crypt_rc4_tocco(int *inputFile) // use this function for s3fs
 {   
     printf("\n\ntesting\n\n");
 
-    char *keyVal = "fj4565"; // hardwiring key value
+    char *user_key = "fj4565"; // hardwiring key value
 
     char *input_buffer = (char *) malloc(BUFFER_SIZE_TOCCO);
     char *output_buffer = (char *) malloc(BUFFER_SIZE_TOCCO);
     
     ssize_t actual_size = (ssize_t) BUFFER_SIZE_TOCCO;
+
+    unsigned char *derived_key;
+    
+    derived_key = (unsigned char*)malloc(strlen(user_key));
     
     RC4_KEY key; // create key
-    RC4_set_key(&key, sizeof(keyVal), reinterpret_cast<const unsigned char *>(keyVal)); // set key
+    
+    EVP_BytesToKey(EVP_rc4(), EVP_sha256(), NULL, (unsigned char *) user_key, (int)strlen(user_key), 1, derived_key, NULL);
+
+    RC4_set_key(&key, (int)strlen((const char *)derived_key), (derived_key)); // set key
 
     actual_size = read(*inputFile, input_buffer, actual_size);
 
     do
     {
         // apply apply encryption
-        RC4(&key, actual_size, reinterpret_cast<const unsigned char *>(input_buffer), reinterpret_cast<unsigned char *>(output_buffer)); 
+        RC4(&key, actual_size, (const unsigned char *)(input_buffer), (unsigned char *)(output_buffer)); 
         
         // put file pointer back to where you begain
         lseek(*inputFile, (off_t)(-actual_size), SEEK_CUR);
@@ -88,6 +98,10 @@ void crypt_rc4_tocco(int *inputFile) // use this function for s3fs
         actual_size = read(*inputFile, input_buffer, actual_size);
     }
     while(actual_size > 0);
+
+    free(input_buffer);
+    free(output_buffer);
+    free(derived_key);
 }
 
 
